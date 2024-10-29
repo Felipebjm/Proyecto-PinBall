@@ -109,8 +109,9 @@ tiempo_fin_jugada = 0 # Tiempo final de la partida, cuando se volvio a presionar
 puntaje_partida = 0 # Total de puntos de la partida
 jugador_actual = 0  # Numero jugador actual
 jugador_seleccionado = 1 # Jugador seleccionado en potenciometro para la UI
-contador_jugada = 0 # Contador de jugadas por partida para un jugador... son 3 intentos por partida
+contador_jugada = 1 # Contador de jugadas por partida para un jugador... son 3 intentos por partida
 contador_partidas = 1 # Contador de partidas totales del juego... deben ser dos en total. Cada partida tiene 3 jugadas o juegos.
+puntajes = [0,0] # Lista con puntajes por jugador
 
 #######################################################################
 # Funcion principal de la maquina de estados
@@ -133,6 +134,7 @@ def main_process(timer):
   global puntaje_partida
   global contador_jugada
   global contador_partidas
+  global puntajes
   
 
   if SELECCION_JUGADOR.read_u16() < 32768:
@@ -149,7 +151,7 @@ def main_process(timer):
   if ESTADO_INICIAL== True:
     jugador_actual = 0
     contador_partidas = 1
-    contador_jugada = 0
+    contador_jugada = 1
     if estado_inicial_inicio == True:
       print("Estado INICIAL")
       estado_inicial_inicio = False
@@ -178,7 +180,7 @@ def main_process(timer):
       tiempo_inicio_jugada = time.ticks_ms() 
       estado_partida_inicio = False
     
-    if contador_jugada <4:
+    if contador_jugada < 4:
       if (Z1_SENSOR.value() == 1):
         parpadeoLed(Z1_LED_PORT,2,0.3) # Parpadea 5 segundos a 2 Hz
         puntaje_partida = puntaje_partida + PUNTAJE_A
@@ -229,13 +231,13 @@ def main_process(timer):
         ESTADO_LIBERACION = True
         estado_partida_inicio = True
       
-
-
       if (time.ticks_ms() - tiempo_inicio_jugada) >= TIMEOUT_PARTIDA * 1000:
         print("     Jugador #",jugador_actual," NO anota por fallo. Total partida: ",puntaje_partida)
         contador_jugada = contador_jugada + 1  
         estado_partida_inicio = True # Para que vuelva a inicializar el estado partida
         estado_partida_inicio = True
+
+      puntajes[jugador_actual-1] = puntaje_partida
 
     else:
       print("------------------ Evaluando fin del juego o cambio de jugador -----------------")
@@ -243,9 +245,9 @@ def main_process(timer):
       if contador_partidas <= 2:
         if jugador_actual == 1:
           jugador_actual = 2
-
         else:
           jugador_actual = 1
+
         contador_jugada = 0
         estado_partida_inicio = True
         puntaje_partida = 0
@@ -344,9 +346,11 @@ def estado_juego(request):
   global contador_partidas
   global contador_jugada
   global puntaje_partida
-  estado_juego = str(jugador_actual) + "," + str(contador_partidas) + "," + str(contador_jugada) + "," + str(puntaje_partida)
-  print("Recibido desde UI solicitud de ESTADO_JUEGO: ",estado_juego)
+  global puntajes
+  estado_juego = str(jugador_actual) + "," + str(contador_partidas) + "," + str(contador_jugada) + "," + str(puntajes[0]) + "," + str(puntajes[1])
+  #print("Recibido desde UI solicitud de ESTADO_JUEGO: ",estado_juego)
   return estado_juego
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    #app.run(debug=True)
+    app.run(debug=False)
