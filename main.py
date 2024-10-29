@@ -269,7 +269,6 @@ def main_process(timer):
     ESTADO_LIBERACION = False
     estado_liberacion_inicio = True
 
-
 # initialize the timer object to tick every second (1,000 milliseconds)
 myTimer.init(period=50, mode=Timer.PERIODIC, callback=main_process)
 
