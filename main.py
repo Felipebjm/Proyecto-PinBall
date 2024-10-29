@@ -111,7 +111,8 @@ jugador_actual = 0  # Numero jugador actual
 jugador_seleccionado = 1 # Jugador seleccionado en potenciometro para la UI
 contador_jugada = 1 # Contador de jugadas por partida para un jugador... son 3 intentos por partida
 contador_partidas = 1 # Contador de partidas totales del juego... deben ser dos en total. Cada partida tiene 3 jugadas o juegos.
-puntajes = [0,0] # Lista con puntajes por jugador
+puntajes = [0,0,0,0,0,0] # Lista con puntajes por jugador pj1j1 pj2j1 pj3j1 pj1j2 pj2j2 pj3j2
+puntajes_permanentes = [0,0,0,0,0,0] # Puntajes que no se resetean entre partidas
 
 #######################################################################
 # Funcion principal de la maquina de estados
@@ -135,6 +136,7 @@ def main_process(timer):
   global contador_jugada
   global contador_partidas
   global puntajes
+  global puntajes_permanentes
   
 
   if SELECCION_JUGADOR.read_u16() < 32768:
@@ -152,6 +154,7 @@ def main_process(timer):
     jugador_actual = 0
     contador_partidas = 1
     contador_jugada = 1
+    puntajes = [0,0,0,0,0,0]
     if estado_inicial_inicio == True:
       print("Estado INICIAL")
       estado_inicial_inicio = False
@@ -184,6 +187,10 @@ def main_process(timer):
       if (Z1_SENSOR.value() == 1):
         parpadeoLed(Z1_LED_PORT,2,0.3) # Parpadea 5 segundos a 2 Hz
         puntaje_partida = puntaje_partida + PUNTAJE_A
+        if jugador_actual == 1:
+          puntajes[contador_jugada - 1 ] = PUNTAJE_A
+        if jugador_actual == 2:
+          puntajes[contador_jugada + 2 ] = PUNTAJE_A
         print("     Jugador #",jugador_actual," anota Z1 ",PUNTAJE_A,". Total partida: ",puntaje_partida)
         tiempo_inicio_jugada = time.ticks_ms()
         contador_jugada = contador_jugada + 1  
@@ -194,6 +201,10 @@ def main_process(timer):
       if(Z2_SENSOR.value() == 1):  
         parpadeoLed(Z2_LED_PORT,2,0.3) # Parpadea 5 segundos a 2 Hz
         puntaje_partida = puntaje_partida + PUNTAJE_A
+        if jugador_actual == 1:
+          puntajes[contador_jugada - 1 ] = PUNTAJE_A
+        if jugador_actual == 2:
+          puntajes[contador_jugada + 2 ] = PUNTAJE_A
         print("     Jugador #",jugador_actual," anota Z2 ",PUNTAJE_A,". Total partida: ",puntaje_partida)
         tiempo_inicio_jugada = time.ticks_ms()
         contador_jugada = contador_jugada + 1  
@@ -204,6 +215,10 @@ def main_process(timer):
       if(Z3_SENSOR.value() == 1):
         parpadeoLed(Z3_LED_PORT,2,0.3) # Parpadea 5 segundos a 2 Hz
         puntaje_partida = puntaje_partida + PUNTAJE_A
+        if jugador_actual == 1:
+          puntajes[contador_jugada - 1 ] = PUNTAJE_A
+        if jugador_actual == 2:
+          puntajes[contador_jugada + 2 ] = PUNTAJE_A        
         print("     Jugador #",jugador_actual," anota Z3",PUNTAJE_A,". Total partida: ",puntaje_partida)
         tiempo_inicio_jugada = time.ticks_ms()
         contador_jugada = contador_jugada + 1  
@@ -214,6 +229,10 @@ def main_process(timer):
       if(Z4_SENSOR.value() == 1):
         parpadeoLed(Z4_LED_PORT,2,0.3) # Parpadea 5 segundos a 2 Hz
         puntaje_partida = puntaje_partida + PUNTAJE_A
+        if jugador_actual == 1:
+          puntajes[contador_jugada - 1 ] = PUNTAJE_A
+        if jugador_actual == 2:
+          puntajes[contador_jugada + 2 ] = PUNTAJE_A        
         print("     Jugador #",jugador_actual," anota Z4",PUNTAJE_A,". Total partida: ",puntaje_partida)
         tiempo_inicio_jugada = time.ticks_ms()
         contador_jugada = contador_jugada + 1  
@@ -223,7 +242,11 @@ def main_process(timer):
       
       if(Z5_SENSOR.value() == 1):
         parpadeoLed(Z5_LED_PORT,2,0.3) # Parpadea 5 segundos a 2 Hz
-        puntaje_partida = puntaje_partida + 2 + PUNTAJE_A
+        puntaje_partida = puntaje_partida + PUNTAJE_B
+        if jugador_actual == 1:
+          puntajes[contador_jugada - 1 ] = PUNTAJE_B
+        if jugador_actual == 2:
+          puntajes[contador_jugada + 2 ] = PUNTAJE_B        
         print("Jugador #",jugador_actual," anota Z5",PUNTAJE_A,". Total partida: ",puntaje_partida)
         tiempo_inicio_jugada = time.ticks_ms()
         contador_jugada = contador_jugada + 1  
@@ -237,7 +260,8 @@ def main_process(timer):
         estado_partida_inicio = True # Para que vuelva a inicializar el estado partida
         estado_partida_inicio = True
 
-      puntajes[jugador_actual-1] = puntaje_partida
+      puntajes_permanentes = puntajes
+      # puntajes[jugador_actual-1] = puntaje_partida
 
     else:
       print("------------------ Evaluando fin del juego o cambio de jugador -----------------")
@@ -248,10 +272,10 @@ def main_process(timer):
         else:
           jugador_actual = 1
 
-        contador_jugada = 0
+        contador_jugada = 1
         estado_partida_inicio = True
         puntaje_partida = 0
-      else:
+      else:  # Cuando termina el juego, partidas mayora 2
         puntaje_partida = 0
         ESTADO_INICIAL = True
         ESTADO_PARTIDA = False
@@ -347,7 +371,7 @@ def estado_juego(request):
   global contador_jugada
   global puntaje_partida
   global puntajes
-  estado_juego = str(jugador_actual) + "," + str(contador_partidas) + "," + str(contador_jugada) + "," + str(puntajes[0]) + "," + str(puntajes[1])
+  estado_juego = str(jugador_actual) + "," + str(contador_partidas) + "," + str(contador_jugada) + "," + str(puntajes_permanentes[0]) + "," + str(puntajes_permanentes[1]) + "," + str(puntajes_permanentes[2]) + "," + str(puntajes_permanentes[3]) + "," + str(puntajes_permanentes[4]) + "," + str(puntajes[5]) 
   #print("Recibido desde UI solicitud de ESTADO_JUEGO: ",estado_juego)
   return estado_juego
 
