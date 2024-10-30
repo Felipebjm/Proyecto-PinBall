@@ -53,15 +53,31 @@ time.sleep(1)
 SERVO_LIBERACION.write(0) 
 
 # Genera un parpadeo en el puerto, por un tiempo especifico y a una frecuencia de X por segundo.
-def parpadeoLed(puerto,tiempo,frecuencia):
+def parpadeoLed(puerto,tiempo,frecuencia,zona_especial=False):
   i = 0
   parpadeos = int(tiempo / frecuencia)
   while (i <= parpadeos):
     #Parpadea
-    pcf.toggle(0)  # Cambia de 1 a 0 o 0 a 1 el puerto 0
+    if zona_especial == True:
+      pcf.toggle(0)
+      pcf.toggle(1)
+      pcf.toggle(2)
+      pcf.toggle(3)
+      pcf.toggle(4)
+    else:
+      pcf.toggle(puerto)  # Cambia de 1 a 0 o 0 a 1 el puerto x
+    
     time.sleep(frecuencia)
     i = i + 1  
-  pcf.pin(puerto,1)
+
+  if zona_especial == True:
+    pcf.pin(0,1)
+    pcf.pin(1,1)
+    pcf.pin(2,1)
+    pcf.pin(3,1)
+    pcf.pin(4,1)
+  else:
+    pcf.pin(puerto,1)  # Cambia de 1 a 0 o 0 a 1 el puerto x
 
 # Parámetros de setup del expansor IO pcf8574
 i2c_interface = (0)
@@ -158,6 +174,8 @@ def main_process(timer):
     if estado_inicial_inicio == True:
       print("Estado INICIAL")
       estado_inicial_inicio = False
+    LED_JUGADOR_1.value(0)
+    LED_JUGADOR_2.value(0)  
     if wifi_conectado == False or pc_conectado == False:
       status_led.value(1)   # El led del pico queda fijo si no hay wifi y la app de pc no responde
     else:
@@ -170,6 +188,9 @@ def main_process(timer):
     if estado_espera_jugador_inicio == True:
       print("Estado ESPERA_JUGADOR")
       estado_espera_jugador_inicio = False
+
+    LED_JUGADOR_1.value(1)
+    LED_JUGADOR_2.value(1)    
     if jugador_actual != 0:  # Jugador inicial en 0 significa que la ui no ha mandado jugador.
       print("Jugador de inicio recibido desde UI: ", jugador_actual)
       ESTADO_ESPERA_JUGADOR = False
@@ -183,6 +204,13 @@ def main_process(timer):
       tiempo_inicio_jugada = time.ticks_ms() 
       estado_partida_inicio = False
     
+    if jugador_actual == 1:
+      LED_JUGADOR_1.value(0)  # Activo en bajo
+      LED_JUGADOR_2.value(1)  # Activo en bajo
+    if jugador_actual == 2:
+      LED_JUGADOR_1.value(1)  # Activo en bajo
+      LED_JUGADOR_2.value(0)  # Activo en bajo
+
     if contador_jugada < 4:
       if (Z1_SENSOR.value() == 1):
         parpadeoLed(Z1_LED_PORT,2,0.3) # Parpadea 5 segundos a 2 Hz
@@ -241,7 +269,7 @@ def main_process(timer):
         estado_partida_inicio = True
       
       if(Z5_SENSOR.value() == 1):
-        parpadeoLed(Z5_LED_PORT,2,0.3) # Parpadea 5 segundos a 2 Hz
+        parpadeoLed(Z5_LED_PORT,2,0.3,True) # Parpadea 5 segundos a 2 Hz
         puntaje_partida = puntaje_partida + PUNTAJE_B
         if jugador_actual == 1:
           puntajes[contador_jugada - 1 ] = PUNTAJE_B
@@ -371,7 +399,7 @@ def estado_juego(request):
   global contador_jugada
   global puntaje_partida
   global puntajes
-  estado_juego = str(jugador_actual) + "," + str(contador_partidas) + "," + str(contador_jugada) + "," + str(puntajes_permanentes[0]) + "," + str(puntajes_permanentes[1]) + "," + str(puntajes_permanentes[2]) + "," + str(puntajes_permanentes[3]) + "," + str(puntajes_permanentes[4]) + "," + str(puntajes[5]) 
+  estado_juego = str(jugador_actual) + "," + str(contador_partidas) + "," + str(contador_jugada) + "," + str(puntajes_permanentes[0]) + "," + str(puntajes_permanentes[1]) + "," + str(puntajes_permanentes[2]) + "," + str(puntajes_permanentes[3]) + "," + str(puntajes_permanentes[4]) + "," + str(puntajes_permanentes[5]) 
   #print("Recibido desde UI solicitud de ESTADO_JUEGO: ",estado_juego)
   return estado_juego
 
